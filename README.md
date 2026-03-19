@@ -5,6 +5,8 @@ Authorized testing only. This project provides a simple Flask UI that combines:
 - Basic heuristic scanning (SQLi/XSS reflections, missing headers, common ports)
 - OWASP ZAP automation (spider + active scan via ZAP API)
 - Burp Suite XML import and display
+- Combined exports (HTML/PDF/JSON)
+- Severity filtering in the UI
 
 ## Quick Start
 
@@ -46,6 +48,16 @@ After a scan, use the export links:
 - `/export/basic`
 - `/export/zap`
 - `/export/burp`
+
+## Combined Export
+
+- HTML: `/export/combined.html?download=1`
+- PDF: `/export/combined.pdf?download=1`
+- JSON: `/export/combined?download=1`
+
+## Severity Filter
+
+Use the dropdown on the homepage to filter results by severity (High/Medium/Low/Info).
 
 ## Notes
 

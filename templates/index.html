@@ -52,12 +52,17 @@
         font-weight: 600;
         margin: 12px 0 6px;
       }
-      input[type="text"], input[type="number"], input[type="file"] {
+      input[type="text"], input[type="number"], input[type="file"], select {
         width: 100%;
         padding: 10px 12px;
         border: 1px solid var(--border);
         border-radius: 8px;
         font-size: 16px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
       }
       .row {
         display: grid;
@@ -110,6 +115,25 @@
         <h1>Web Scanner</h1>
         <p>Authorized testing only. This UI combines a basic scanner, OWASP ZAP automation, and Burp import.</p>
 
+        <form method="get" action="/">
+          <h2>Severity Filter</h2>
+          <label for="severity">Show Findings</label>
+          <div class="row">
+            <div>
+              <select id="severity" name="severity">
+                <option value="all" {% if severity == "all" %}selected{% endif %}>All severities</option>
+                <option value="high" {% if severity == "high" %}selected{% endif %}>High / Critical</option>
+                <option value="medium" {% if severity == "medium" %}selected{% endif %}>Medium</option>
+                <option value="low" {% if severity == "low" %}selected{% endif %}>Low</option>
+                <option value="info" {% if severity == "info" %}selected{% endif %}>Info</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button type="submit">Apply Filter</button>
+            </div>
+          </div>
+        </form>
+
         <form method="post" action="/scan">
           <h2>Basic Heuristic Scan</h2>
           <label for="base_url">Target URL</label>
@@ -136,6 +160,18 @@
         {% if error %}
         <div class="error">{{ error }}</div>
         {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>Combined Export</h2>
+        <p class="muted">Download a combined report across Basic, ZAP, and Burp results.</p>
+        <div class="actions">
+          <a href="/export/combined.html?download=1">Download HTML</a>
+          &nbsp;|&nbsp;
+          <a href="/export/combined.pdf?download=1">Download PDF</a>
+          &nbsp;|&nbsp;
+          <a href="/export/combined?download=1">Download JSON</a>
+        </div>
       </div>
 
       <div class="card">
@@ -251,7 +287,9 @@
         <p>Target: {{ report_basic.target }}</p>
         <p>UTC Time: {{ report_basic.timestamp_utc }}</p>
         <p>Total Findings: {{ report_basic.count }}</p>
-        <p><a href="/export/basic">Export JSON</a></p>
+        <p>
+          <a href="/export/basic?download=1">Download JSON</a>
+        </p>
 
         {% for item in report_basic.findings %}
         <div class="result-item">{{ item }}</div>
@@ -266,7 +304,9 @@
         <p>UTC Time: {{ report_zap.timestamp_utc }}</p>
         <p>ZAP Version: {{ report_zap.zap_version }}</p>
         <p>Total Findings: {{ report_zap.count }}</p>
-        <p><a href="/export/zap">Export JSON</a></p>
+        <p>
+          <a href="/export/zap?download=1">Download JSON</a>
+        </p>
 
         {% for item in report_zap.findings %}
         <div class="result-item">{{ item }}</div>
@@ -279,7 +319,9 @@
         <h2>Burp Import Results</h2>
         <p>UTC Time: {{ report_burp.timestamp_utc }}</p>
         <p>Total Findings: {{ report_burp.count }}</p>
-        <p><a href="/export/burp">Export JSON</a></p>
+        <p>
+          <a href="/export/burp?download=1">Download JSON</a>
+        </p>
 
         {% for item in report_burp.findings %}
         <div class="result-item">{{ item }}</div>

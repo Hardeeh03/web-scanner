@@ -1,8 +1,12 @@
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import json
+from io import BytesIO
 
 from flask import Flask, Response, render_template, request
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 from scanner import run_scan
 from scanner.burp_import import BurpImportError, parse_burp_xml
@@ -23,14 +27,112 @@ def _is_valid_url(url):
     return parsed.scheme in {"http", "https"} and parsed.netloc
 
 
+def _severity_bucket(value):
+    v = (value or "").strip().lower()
+    if v in {"high", "critical"}:
+        return "high"
+    if v in {"medium", "med"}:
+        return "medium"
+    if v in {"low"}:
+        return "low"
+    if v in {"info", "informational"}:
+        return "info"
+    return "unknown"
+
+
+def _filter_report(report, severity):
+    if not report or severity in {"", "all"}:
+        return report
+
+    target = severity.lower()
+    filtered = []
+    for item in report.get("findings", []):
+        if item.get("type") == "ZAP Alert":
+            sev = _severity_bucket(item.get("risk"))
+        elif item.get("type") == "Burp Issue":
+            sev = _severity_bucket(item.get("severity"))
+        else:
+            sev = "info"
+
+        if sev == target:
+            filtered.append(item)
+
+    new_report = dict(report)
+    new_report["findings"] = filtered
+    new_report["count"] = len(filtered)
+    new_report["filtered_by"] = target
+    return new_report
+
+
+def _combine_reports(*reports):
+    combined = {"target": "Combined", "findings": []}
+    for report in reports:
+        if report:
+            combined["findings"].extend(report.get("findings", []))
+    combined["count"] = len(combined["findings"])
+    combined["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
+    return combined
+
+
+def _render_combined_html(report):
+    lines = []
+    lines.append("<!doctype html><html><head><meta charset='utf-8'>")
+    lines.append("<title>Web Scanner Report</title></head><body>")
+    lines.append(f"<h1>Web Scanner Report</h1>")
+    lines.append(f"<p>UTC Time: {report.get('timestamp_utc','')}</p>")
+    lines.append(f"<p>Total Findings: {report.get('count',0)}</p>")
+    lines.append("<ul>")
+    for item in report.get("findings", []):
+        lines.append(f"<li><pre>{json.dumps(item, ensure_ascii=True)}</pre></li>")
+    lines.append("</ul></body></html>")
+    return "\n".join(lines)
+
+
+def _render_pdf(report):
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    width, height = letter
+    y = height - 50
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(40, y, "Web Scanner Report")
+    y -= 20
+    c.setFont("Helvetica", 10)
+    c.drawString(40, y, f"UTC Time: {report.get('timestamp_utc','')}")
+    y -= 14
+    c.drawString(40, y, f"Total Findings: {report.get('count',0)}")
+    y -= 20
+    for item in report.get("findings", []):
+        text = json.dumps(item, ensure_ascii=True)
+        for line in _wrap_text(text, 95):
+            if y < 60:
+                c.showPage()
+                y = height - 50
+                c.setFont("Helvetica", 10)
+            c.drawString(40, y, line)
+            y -= 12
+    c.save()
+    buf.seek(0)
+    return buf
+
+
+def _wrap_text(text, max_len):
+    lines = []
+    while text:
+        lines.append(text[:max_len])
+        text = text[max_len:]
+    return lines
+
+
 @app.get("/")
 def index():
+    severity = request.args.get("severity", "all")
     return render_template(
         "index.html",
-        report_basic=last_report_basic,
-        report_zap=last_report_zap,
-        report_burp=last_report_burp,
+        report_basic=_filter_report(last_report_basic, severity),
+        report_zap=_filter_report(last_report_zap, severity),
+        report_burp=_filter_report(last_report_burp, severity),
         error=last_error,
+        severity=severity,
     )
 
 
@@ -173,20 +275,50 @@ def pro_scan_route():
 
 @app.get("/export/<kind>")
 def export_report(kind):
+    download = request.args.get("download") == "1"
     if kind == "basic":
         report = last_report_basic
     elif kind == "zap":
         report = last_report_zap
     elif kind == "burp":
         report = last_report_burp
+    elif kind == "combined":
+        report = _combine_reports(last_report_basic, last_report_zap, last_report_burp)
     else:
         report = None
 
     if not report:
         return Response("No report available", status=404, mimetype="text/plain")
 
+    if kind == "combined" and request.path.endswith(".html"):
+        html = _render_combined_html(report)
+        resp = Response(html, mimetype="text/html")
+        if download:
+            resp.headers["Content-Disposition"] = "attachment; filename=report.html"
+        return resp
+
+    if kind == "combined" and request.path.endswith(".pdf"):
+        pdf_buf = _render_pdf(report)
+        resp = Response(pdf_buf.read(), mimetype="application/pdf")
+        if download:
+            resp.headers["Content-Disposition"] = "attachment; filename=report.pdf"
+        return resp
+
     payload = json.dumps(report, indent=2, ensure_ascii=True)
-    return Response(payload, mimetype="application/json")
+    resp = Response(payload, mimetype="application/json")
+    if download:
+        resp.headers["Content-Disposition"] = f"attachment; filename={kind}.json"
+    return resp
+
+
+@app.get("/export/combined.html")
+def export_combined_html():
+    return export_report("combined")
+
+
+@app.get("/export/combined.pdf")
+def export_combined_pdf():
+    return export_report("combined")
 
 
 if __name__ == "__main__":
