@@ -1,14 +1,27 @@
 # Web Scanner
 
-Authorized testing only. This project provides a simple Flask UI that combines:
+This project is a **Python + Flask** web security scanner UI that combines:
 
-- Basic heuristic scanning (SQLi/XSS reflections, missing headers, common ports)
+- A basic heuristic scanner (SQLi/XSS reflection checks, missing headers, common ports)
 - OWASP ZAP automation (spider + active scan via ZAP API)
-- Burp Suite XML import and display
-- Combined exports (HTML/PDF/JSON)
-- Severity filtering in the UI
+- Burp Suite XML import (view findings in the same UI)
+- Combined report export (HTML / PDF / JSON)
+- Severity filtering (High / Medium / Low / Info)
 
-## Quick Start
+> **Authorized testing only.** Use this tool only on systems you own or have explicit permission to test.
+
+## What This Project Does
+
+You can run quick scans from the browser, trigger ZAP from Docker, and import Burp results.  
+It’s intended as a practical UI for organizing findings—not a full replacement for professional tools.
+
+## Requirements
+
+- Python 3.9+
+- Docker (for OWASP ZAP)
+- Burp Suite (optional, for XML export)
+
+## Install & Run
 
 ```powershell
 python -m pip install -r C:\Users\Hardee\OneDrive\Documents\Playground\requirements.txt
@@ -17,9 +30,9 @@ python C:\Users\Hardee\OneDrive\Documents\Playground\app.py
 
 Open `http://127.0.0.1:5000`.
 
-## Run ZAP with Docker
+## OWASP ZAP (Docker)
 
-No API key (simpler for local use):
+No API key (quick local use):
 
 ```powershell
 docker pull owasp/zap2docker-stable
@@ -40,24 +53,29 @@ In the UI:
 
 ## Burp Import
 
-Export a Burp scan as XML and upload it in the UI. The findings will be displayed and can be exported as JSON.
+Export your Burp scan as **XML**, then upload it using the Burp Import section in the UI.
 
-## JSON Export
+## Exports
 
-After a scan, use the export links:
-- `/export/basic`
-- `/export/zap`
-- `/export/burp`
+### Individual JSON
+- `/export/basic?download=1`
+- `/export/zap?download=1`
+- `/export/burp?download=1`
 
-## Combined Export
-
+### Combined Report
 - HTML: `/export/combined.html?download=1`
 - PDF: `/export/combined.pdf?download=1`
 - JSON: `/export/combined?download=1`
 
 ## Severity Filter
 
-Use the dropdown on the homepage to filter results by severity (High/Medium/Low/Info).
+Use the dropdown at the top of the UI to filter results by severity.
+
+## Roadmap Ideas (Optional)
+
+- Add results history
+- Export ZIP bundle (HTML + PDF + JSON)
+- CWE tagging
 
 ## Notes
 
