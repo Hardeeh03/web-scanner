@@ -79,11 +79,6 @@ Use the dropdown at the top of the UI to filter results by severity.
 4. (Optional) Import Burp XML for external testing results.
 5. Download JSON or a combined HTML/PDF report.
 
-## Screenshots
-
-![UI Overview](assets/ui-overview.svg)
-![Professional Scan](assets/pro-scan.svg)
-
 ## Roadmap Ideas (Optional)
 
 - Add results history
