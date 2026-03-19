@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Basic Security Scanner</title>
+    <title>Web Scanner</title>
     <style>
       :root {
         --bg: #f7f5f2;
@@ -31,10 +31,17 @@
         padding: 20px;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
       }
+      .card + .card {
+        margin-top: 18px;
+      }
       h1 {
         margin: 0 0 10px 0;
         font-size: 32px;
         letter-spacing: 0.2px;
+      }
+      h2 {
+        margin: 0 0 10px 0;
+        font-size: 22px;
       }
       p {
         margin: 0 0 16px 0;
@@ -45,7 +52,7 @@
         font-weight: 600;
         margin: 12px 0 6px;
       }
-      input[type="text"], input[type="number"] {
+      input[type="text"], input[type="number"], input[type="file"] {
         width: 100%;
         padding: 10px 12px;
         border: 1px solid var(--border);
@@ -87,6 +94,9 @@
         font-size: 14px;
         white-space: pre-wrap;
       }
+      .muted {
+        color: var(--muted);
+      }
       @media (max-width: 720px) {
         .row {
           grid-template-columns: 1fr;
@@ -97,10 +107,11 @@
   <body>
     <div class="wrap">
       <div class="card">
-        <h1>Basic Security Scanner</h1>
-        <p>Authorized testing only. Scans for basic SQLi/XSS heuristics, header gaps, and common ports.</p>
+        <h1>Web Scanner</h1>
+        <p>Authorized testing only. This UI combines a basic scanner, OWASP ZAP automation, and Burp import.</p>
 
         <form method="post" action="/scan">
+          <h2>Basic Heuristic Scan</h2>
           <label for="base_url">Target URL</label>
           <input id="base_url" name="base_url" type="text" placeholder="https://example.com" required />
 
@@ -127,14 +138,94 @@
         {% endif %}
       </div>
 
-      {% if report %}
-      <div class="card results">
-        <h2>Results</h2>
-        <p>Target: {{ report.target }}</p>
-        <p>UTC Time: {{ report.timestamp_utc }}</p>
-        <p>Total Findings: {{ report.count }}</p>
+      <div class="card">
+        <form method="post" action="/zap-scan">
+          <h2>OWASP ZAP (Docker)</h2>
+          <p class="muted">Start ZAP locally in Docker, then run this scan via the API.</p>
 
-        {% for item in report.findings %}
+          <label for="zap_target">Target URL</label>
+          <input id="zap_target" name="zap_target" type="text" placeholder="https://example.com" required />
+
+          <div class="row">
+            <div>
+              <label for="zap_url">ZAP API URL</label>
+              <input id="zap_url" name="zap_url" type="text" value="http://localhost:8080" />
+            </div>
+            <div>
+              <label for="zap_api_key">ZAP API Key (optional)</label>
+              <input id="zap_api_key" name="zap_api_key" type="text" placeholder="Leave blank if disabled" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>
+                <input type="checkbox" name="zap_spider" checked />
+                Run Spider
+              </label>
+            </div>
+            <div>
+              <label>
+                <input type="checkbox" name="zap_active" checked />
+                Run Active Scan
+              </label>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit">Run ZAP Scan</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <form method="post" action="/burp-import" enctype="multipart/form-data">
+          <h2>Burp Suite Import</h2>
+          <p class="muted">Import a Burp XML export to view findings here.</p>
+
+          <label for="burp_xml">Burp XML File</label>
+          <input id="burp_xml" name="burp_xml" type="file" accept=".xml" required />
+
+          <div class="actions">
+            <button type="submit">Import Burp Report</button>
+          </div>
+        </form>
+      </div>
+
+      {% if report_basic %}
+      <div class="card results">
+        <h2>Basic Scan Results</h2>
+        <p>Target: {{ report_basic.target }}</p>
+        <p>UTC Time: {{ report_basic.timestamp_utc }}</p>
+        <p>Total Findings: {{ report_basic.count }}</p>
+
+        {% for item in report_basic.findings %}
+        <div class="result-item">{{ item }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if report_zap %}
+      <div class="card results">
+        <h2>ZAP Results</h2>
+        <p>Target: {{ report_zap.target }}</p>
+        <p>UTC Time: {{ report_zap.timestamp_utc }}</p>
+        <p>ZAP Version: {{ report_zap.zap_version }}</p>
+        <p>Total Findings: {{ report_zap.count }}</p>
+
+        {% for item in report_zap.findings %}
+        <div class="result-item">{{ item }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if report_burp %}
+      <div class="card results">
+        <h2>Burp Import Results</h2>
+        <p>UTC Time: {{ report_burp.timestamp_utc }}</p>
+        <p>Total Findings: {{ report_burp.count }}</p>
+
+        {% for item in report_burp.findings %}
         <div class="result-item">{{ item }}</div>
         {% endfor %}
       </div>
