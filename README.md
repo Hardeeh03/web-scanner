@@ -71,6 +71,19 @@ Export your Burp scan as **XML**, then upload it using the Burp Import section i
 
 Use the dropdown at the top of the UI to filter results by severity.
 
+## Example Workflow
+
+1. Start ZAP in Docker (see the ZAP section above).
+2. Run the app and open `http://127.0.0.1:5000`.
+3. Use **Professional Scan** for a combined Basic + ZAP run.
+4. (Optional) Import Burp XML for external testing results.
+5. Download JSON or a combined HTML/PDF report.
+
+## Screenshots
+
+![UI Overview](assets/ui-overview.svg)
+![Professional Scan](assets/pro-scan.svg)
+
 ## Roadmap Ideas (Optional)
 
 - Add results history
