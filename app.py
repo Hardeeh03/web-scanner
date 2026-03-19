@@ -1,6 +1,8 @@
 from urllib.parse import urlparse
 
-from flask import Flask, render_template, request
+import json
+
+from flask import Flask, Response, render_template, request
 
 from scanner import run_scan
 from scanner.burp_import import BurpImportError, parse_burp_xml
@@ -120,6 +122,71 @@ def burp_import_route():
         last_report_burp = None
 
     return index()
+
+
+@app.post("/pro-scan")
+def pro_scan_route():
+    global last_report_basic, last_report_zap, last_error
+
+    base_url = request.form.get("pro_target", "").strip()
+    zap_url = request.form.get("pro_zap_url", "http://localhost:8080").strip()
+    api_key = request.form.get("pro_zap_api_key", "").strip()
+    max_pages = request.form.get("pro_max_pages", "50").strip()
+    include_ports = request.form.get("pro_include_ports") == "on"
+    do_spider = request.form.get("pro_zap_spider") == "on"
+    do_active = request.form.get("pro_zap_active") == "on"
+
+    if not _is_valid_url(base_url):
+        last_error = "Please enter a valid http(s) URL for the professional scan."
+        return index()
+
+    try:
+        max_pages_int = max(1, min(int(max_pages), 500))
+    except ValueError:
+        max_pages_int = 50
+
+    try:
+        zap_version = zap_health(zap_url, api_key)
+    except ZapError as exc:
+        last_error = f"ZAP not reachable: {exc}"
+        last_report_zap = None
+        return index()
+
+    try:
+        last_report_basic = run_scan(
+            base_url=base_url, max_pages=max_pages_int, include_ports=include_ports
+        )
+        last_report_zap = zap_scan(
+            target_url=base_url,
+            zap_base_url=zap_url,
+            api_key=api_key,
+            spider=do_spider,
+            active=do_active,
+        )
+        last_report_zap["zap_version"] = zap_version
+        last_error = None
+    except (ZapError, Exception) as exc:
+        last_error = f"Professional scan failed: {exc}"
+
+    return index()
+
+
+@app.get("/export/<kind>")
+def export_report(kind):
+    if kind == "basic":
+        report = last_report_basic
+    elif kind == "zap":
+        report = last_report_zap
+    elif kind == "burp":
+        report = last_report_burp
+    else:
+        report = None
+
+    if not report:
+        return Response("No report available", status=404, mimetype="text/plain")
+
+    payload = json.dumps(report, indent=2, ensure_ascii=True)
+    return Response(payload, mimetype="application/json")
 
 
 if __name__ == "__main__":

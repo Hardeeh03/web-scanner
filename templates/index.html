@@ -139,6 +139,59 @@
       </div>
 
       <div class="card">
+        <form method="post" action="/pro-scan">
+          <h2>Professional Scan (Basic + ZAP)</h2>
+          <p class="muted">Runs the basic heuristic scan and OWASP ZAP in one flow.</p>
+
+          <label for="pro_target">Target URL</label>
+          <input id="pro_target" name="pro_target" type="text" placeholder="https://example.com" required />
+
+          <div class="row">
+            <div>
+              <label for="pro_max_pages">Max Pages</label>
+              <input id="pro_max_pages" name="pro_max_pages" type="number" value="50" min="1" max="500" />
+            </div>
+            <div>
+              <label>
+                <input type="checkbox" name="pro_include_ports" checked />
+                Include Common Port Scan
+              </label>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="pro_zap_url">ZAP API URL</label>
+              <input id="pro_zap_url" name="pro_zap_url" type="text" value="http://localhost:8080" />
+            </div>
+            <div>
+              <label for="pro_zap_api_key">ZAP API Key (optional)</label>
+              <input id="pro_zap_api_key" name="pro_zap_api_key" type="text" placeholder="Leave blank if disabled" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>
+                <input type="checkbox" name="pro_zap_spider" checked />
+                Run Spider
+              </label>
+            </div>
+            <div>
+              <label>
+                <input type="checkbox" name="pro_zap_active" checked />
+                Run Active Scan
+              </label>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit">Run Professional Scan</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
         <form method="post" action="/zap-scan">
           <h2>OWASP ZAP (Docker)</h2>
           <p class="muted">Start ZAP locally in Docker, then run this scan via the API.</p>
@@ -198,6 +251,7 @@
         <p>Target: {{ report_basic.target }}</p>
         <p>UTC Time: {{ report_basic.timestamp_utc }}</p>
         <p>Total Findings: {{ report_basic.count }}</p>
+        <p><a href="/export/basic">Export JSON</a></p>
 
         {% for item in report_basic.findings %}
         <div class="result-item">{{ item }}</div>
@@ -212,6 +266,7 @@
         <p>UTC Time: {{ report_zap.timestamp_utc }}</p>
         <p>ZAP Version: {{ report_zap.zap_version }}</p>
         <p>Total Findings: {{ report_zap.count }}</p>
+        <p><a href="/export/zap">Export JSON</a></p>
 
         {% for item in report_zap.findings %}
         <div class="result-item">{{ item }}</div>
@@ -224,6 +279,7 @@
         <h2>Burp Import Results</h2>
         <p>UTC Time: {{ report_burp.timestamp_utc }}</p>
         <p>Total Findings: {{ report_burp.count }}</p>
+        <p><a href="/export/burp">Export JSON</a></p>
 
         {% for item in report_burp.findings %}
         <div class="result-item">{{ item }}</div>
