@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Basic Security Scanner</title>
+    <style>
+      :root {
+        --bg: #f7f5f2;
+        --panel: #ffffff;
+        --ink: #222;
+        --muted: #666;
+        --accent: #136f63;
+        --border: #e5e0d9;
+      }
+      body {
+        margin: 0;
+        font-family: "Georgia", "Times New Roman", serif;
+        background: radial-gradient(circle at 10% 10%, #fff5e6, #f7f5f2);
+        color: var(--ink);
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+      }
+      h1 {
+        margin: 0 0 10px 0;
+        font-size: 32px;
+        letter-spacing: 0.2px;
+      }
+      p {
+        margin: 0 0 16px 0;
+        color: var(--muted);
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 12px 0 6px;
+      }
+      input[type="text"], input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 16px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .actions {
+        margin-top: 16px;
+      }
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .error {
+        background: #ffe8e8;
+        border: 1px solid #f2b8b8;
+        color: #8b1e1e;
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+      }
+      .results {
+        margin-top: 20px;
+      }
+      .result-item {
+        border-top: 1px solid var(--border);
+        padding: 10px 0;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        white-space: pre-wrap;
+      }
+      @media (max-width: 720px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Basic Security Scanner</h1>
+        <p>Authorized testing only. Scans for basic SQLi/XSS heuristics, header gaps, and common ports.</p>
+
+        <form method="post" action="/scan">
+          <label for="base_url">Target URL</label>
+          <input id="base_url" name="base_url" type="text" placeholder="https://example.com" required />
+
+          <div class="row">
+            <div>
+              <label for="max_pages">Max Pages</label>
+              <input id="max_pages" name="max_pages" type="number" value="50" min="1" max="500" />
+            </div>
+            <div>
+              <label>
+                <input type="checkbox" name="include_ports" checked />
+                Include Common Port Scan
+              </label>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit">Run Scan</button>
+          </div>
+        </form>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+      </div>
+
+      {% if report %}
+      <div class="card results">
+        <h2>Results</h2>
+        <p>Target: {{ report.target }}</p>
+        <p>UTC Time: {{ report.timestamp_utc }}</p>
+        <p>Total Findings: {{ report.count }}</p>
+
+        {% for item in report.findings %}
+        <div class="result-item">{{ item }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>
