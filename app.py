@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from threading import Lock, Thread
 from urllib.parse import urlparse
 
 import json
@@ -20,6 +21,12 @@ last_report_basic = None
 last_report_zap = None
 last_report_burp = None
 last_error = None
+
+zap_job = {
+    "status": "idle",  # idle | running | done | error
+    "message": "",
+}
+zap_lock = Lock()
 
 
 def _is_valid_url(url):
@@ -133,6 +140,8 @@ def index():
         report_burp=_filter_report(last_report_burp, severity),
         error=last_error,
         severity=severity,
+        zap_status=zap_job["status"],
+        zap_message=zap_job["message"],
     )
 
 
@@ -181,26 +190,14 @@ def zap_scan_route():
         last_report_zap = None
         return index()
 
-    try:
-        zap_version = zap_health(zap_url, api_key)
-    except ZapError as exc:
-        last_error = f"ZAP not reachable: {exc}"
-        last_report_zap = None
-        return index()
-
-    try:
-        last_report_zap = zap_scan(
-            target_url=base_url,
-            zap_base_url=zap_url,
-            api_key=api_key,
-            spider=do_spider,
-            active=do_active,
-        )
-        last_report_zap["zap_version"] = zap_version
-        last_error = None
-    except ZapError as exc:
-        last_error = f"ZAP scan failed: {exc}"
-        last_report_zap = None
+    _start_zap_job(
+        target_url=base_url,
+        zap_base_url=zap_url,
+        api_key=api_key,
+        spider=do_spider,
+        active=do_active,
+    )
+    last_error = None
 
     return index()
 
@@ -248,29 +245,71 @@ def pro_scan_route():
         max_pages_int = 50
 
     try:
-        zap_version = zap_health(zap_url, api_key)
-    except ZapError as exc:
-        last_error = f"ZAP not reachable: {exc}"
-        last_report_zap = None
-        return index()
-
-    try:
         last_report_basic = run_scan(
             base_url=base_url, max_pages=max_pages_int, include_ports=include_ports
         )
-        last_report_zap = zap_scan(
+        _start_zap_job(
             target_url=base_url,
             zap_base_url=zap_url,
             api_key=api_key,
             spider=do_spider,
             active=do_active,
         )
-        last_report_zap["zap_version"] = zap_version
         last_error = None
     except (ZapError, Exception) as exc:
         last_error = f"Professional scan failed: {exc}"
 
     return index()
+
+
+@app.get("/zap-status")
+def zap_status():
+    return {
+        "status": zap_job["status"],
+        "message": zap_job["message"],
+        "has_report": last_report_zap is not None,
+    }
+
+
+def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
+    global last_report_zap
+
+    def _runner():
+        global last_report_zap, last_error
+        with zap_lock:
+            zap_job["status"] = "running"
+            zap_job["message"] = "ZAP scan running..."
+            last_report_zap = None
+        try:
+            zap_version = zap_health(zap_base_url, api_key)
+            report = zap_scan(
+                target_url=target_url,
+                zap_base_url=zap_base_url,
+                api_key=api_key,
+                spider=spider,
+                active=active,
+            )
+            report["zap_version"] = zap_version
+            with zap_lock:
+                last_report_zap = report
+                zap_job["status"] = "done"
+                zap_job["message"] = "ZAP scan completed."
+        except ZapError as exc:
+            with zap_lock:
+                zap_job["status"] = "error"
+                zap_job["message"] = f"ZAP scan failed: {exc}"
+        except Exception as exc:
+            with zap_lock:
+                zap_job["status"] = "error"
+                zap_job["message"] = f"ZAP scan failed: {exc}"
+
+    # Avoid starting multiple ZAP scans at once.
+    with zap_lock:
+        if zap_job["status"] == "running":
+            zap_job["message"] = "ZAP scan already running..."
+            return
+
+    Thread(target=_runner, daemon=True).start()
 
 
 @app.get("/export/<kind>")

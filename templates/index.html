@@ -89,6 +89,19 @@
         border-radius: 8px;
         margin-top: 12px;
       }
+      .status {
+        background: #eef7f4;
+        border: 1px solid #c7e6de;
+        color: #0f4d44;
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+      }
+      .status.error {
+        background: #ffe8e8;
+        border: 1px solid #f2b8b8;
+        color: #8b1e1e;
+      }
       .results {
         margin-top: 20px;
       }
@@ -160,6 +173,12 @@
         {% if error %}
         <div class="error">{{ error }}</div>
         {% endif %}
+      </div>
+
+      <div class="card">
+        <h2>ZAP Status</h2>
+        <p class="muted">ZAP runs asynchronously. Use the status below to track progress.</p>
+        <div id="zap-status" class="status">{{ zap_message }}</div>
       </div>
 
       <div class="card">
@@ -329,5 +348,29 @@
       </div>
       {% endif %}
     </div>
+    <script>
+      (function () {
+        function updateStatus() {
+          fetch("/zap-status")
+            .then(function (res) {
+              return res.json();
+            })
+            .then(function (data) {
+              var el = document.getElementById("zap-status");
+              if (!el) return;
+              el.textContent = data.message || "ZAP idle.";
+              el.classList.toggle("error", data.status === "error");
+              if (data.status === "done" || data.status === "error") {
+                return;
+              }
+              setTimeout(updateStatus, 4000);
+            })
+            .catch(function () {
+              setTimeout(updateStatus, 6000);
+            });
+        }
+        updateStatus();
+      })();
+    </script>
   </body>
 </html>
