@@ -13,27 +13,29 @@ def _zap_request_json(
     zap_base_url, path, params, timeout_s=180, retries=3, backoff_s=2.0
 ):
     url = urljoin(zap_base_url.rstrip("/") + "/", path.lstrip("/"))
-    last_exc = None
     for attempt in range(retries + 1):
         try:
             r = requests.get(url, params=params, timeout=timeout_s)
-            last_exc = None
         except requests.RequestException as exc:
-            last_exc = exc
             if attempt < retries:
                 time.sleep(backoff_s * (attempt + 1))
                 continue
             raise ZapError(f"Failed to reach ZAP at {zap_base_url}: {exc}") from exc
 
-    if r.status_code != 200:
-        snippet = (r.text or "").strip().replace("\n", " ")[:200]
-        raise ZapError(f"ZAP returned HTTP {r.status_code}: {snippet}")
+        if r.status_code != 200:
+            if r.status_code >= 500 and attempt < retries:
+                time.sleep(backoff_s * (attempt + 1))
+                continue
+            snippet = (r.text or "").strip().replace("\n", " ")[:200]
+            raise ZapError(f"ZAP returned HTTP {r.status_code}: {snippet}")
 
-    try:
-        return r.json()
-    except ValueError as exc:
-        snippet = (r.text or "").strip().replace("\n", " ")[:200]
-        raise ZapError(f"ZAP returned invalid JSON: {snippet}") from exc
+        try:
+            return r.json()
+        except ValueError as exc:
+            snippet = (r.text or "").strip().replace("\n", " ")[:200]
+            raise ZapError(f"ZAP returned invalid JSON: {snippet}") from exc
+
+    raise ZapError("ZAP request failed after retries.")
 
 
 def _add_apikey(params, api_key):
@@ -89,14 +91,14 @@ def zap_scan(
     _zap_request_json(
         zap_base_url,
         "/JSON/core/action/accessUrl/",
-        _add_apikey({"url": target_url, "followRedirects": True}, api_key),
+        _add_apikey({"url": target_url, "followRedirects": "true"}, api_key),
         timeout_s=timeout_s,
     )
     if spider:
         data = _zap_request_json(
             zap_base_url,
             "/JSON/spider/action/scan/",
-            _add_apikey({"url": target_url}, api_key),
+            _add_apikey({"url": target_url, "recurse": "true"}, api_key),
             timeout_s=timeout_s,
         )
         scan_id = data.get("scan")
@@ -110,7 +112,7 @@ def zap_scan(
         data = _zap_request_json(
             zap_base_url,
             "/JSON/ascan/action/scan/",
-            _add_apikey({"url": target_url, "recurse": True}, api_key),
+            _add_apikey({"url": target_url, "recurse": "true"}, api_key),
             timeout_s=timeout_s,
         )
         scan_id = data.get("scan")
