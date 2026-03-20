@@ -3,7 +3,7 @@
 This project is a **Python + Flask** web security scanner UI that combines:
 
 - A basic heuristic scanner (SQLi/XSS reflection checks, missing headers, common ports)
-- OWASP ZAP automation (spider + active scan via ZAP API)
+- OWASP ZAP automation (spider + active scan via local ZAP API)
 - Burp Suite XML import (view findings in the same UI)
 - Combined report export (HTML / PDF / JSON)
 - Severity filtering (High / Medium / Low / Info)
@@ -18,7 +18,7 @@ It’s intended as a practical UI for organizing findings—not a full replaceme
 ## Requirements
 
 - Python 3.9+
-- Docker (for OWASP ZAP)
+- Java 11+ (for OWASP ZAP)
 - Burp Suite (optional, for XML export)
 
 ## Install & Run
@@ -30,21 +30,18 @@ python C:\Users\Hardee\OneDrive\Documents\Playground\app.py
 
 Open `http://127.0.0.1:5000`.
 
-## OWASP ZAP (Docker)
+## OWASP ZAP (Local, No Docker)
 
-No API key (quick local use):
+Install ZAP and run it in daemon mode:
 
 ```powershell
-docker pull owasp/zap2docker-stable
-docker run -u zap -p 8080:8080 -i owasp/zap2docker-stable `
-  zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
+zap.bat -daemon -host 127.0.0.1 -port 8080 -config api.disablekey=true
 ```
 
 With API key:
 
 ```powershell
-docker run -u zap -p 8080:8080 -i owasp/zap2docker-stable `
-  zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=YOUR_KEY
+zap.bat -daemon -host 127.0.0.1 -port 8080 -config api.key=YOUR_KEY
 ```
 
 In the UI:

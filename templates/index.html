@@ -126,7 +126,7 @@
     <div class="wrap">
       <div class="card">
         <h1>Web Scanner</h1>
-        <p>Authorized testing only. This UI combines a basic scanner, OWASP ZAP automation, and Burp import.</p>
+        <p>Authorized testing only. This UI combines a basic scanner, OWASP ZAP automation (local daemon), and Burp import.</p>
 
         <form method="get" action="/">
           <h2>Severity Filter</h2>
@@ -268,8 +268,8 @@
 
       <div class="card">
         <form method="post" action="/zap-scan">
-          <h2>OWASP ZAP (Docker)</h2>
-          <p class="muted">Start ZAP locally in Docker, then run this scan via the API.</p>
+          <h2>OWASP ZAP (Local)</h2>
+          <p class="muted">Start ZAP locally (daemon mode), then run this scan via the API.</p>
 
           <label for="zap_target">Target URL</label>
           <input id="zap_target" name="zap_target" type="text" placeholder="https://example.com" required />
