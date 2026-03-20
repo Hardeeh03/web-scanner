@@ -25,6 +25,7 @@ last_error = None
 zap_job = {
     "status": "idle",  # idle | running | done | error
     "message": "",
+    "started_at": None,
 }
 zap_lock = Lock()
 
@@ -264,6 +265,12 @@ def pro_scan_route():
 
 @app.get("/zap-status")
 def zap_status():
+    # Auto-timeout a stuck job after 30 minutes.
+    if zap_job["status"] == "running" and zap_job["started_at"]:
+        if (datetime.now(timezone.utc) - zap_job["started_at"]).total_seconds() > 1800:
+            with zap_lock:
+                zap_job["status"] = "error"
+                zap_job["message"] = "ZAP scan timed out. Please reconnect and try again."
     return {
         "status": zap_job["status"],
         "message": zap_job["message"],
@@ -279,6 +286,7 @@ def zap_reconnect():
     with zap_lock:
         zap_job["status"] = "running"
         zap_job["message"] = "Reconnecting to ZAP..."
+        zap_job["started_at"] = datetime.now(timezone.utc)
     try:
         version = zap_health(zap_url, api_key, timeout_s=60, retries=5)
         with zap_lock:
@@ -293,6 +301,15 @@ def zap_reconnect():
     return index()
 
 
+@app.post("/zap-reset")
+def zap_reset():
+    with zap_lock:
+        zap_job["status"] = "idle"
+        zap_job["message"] = "ZAP idle."
+        zap_job["started_at"] = None
+    return index()
+
+
 def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
     global last_report_zap
 
@@ -301,6 +318,7 @@ def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
         with zap_lock:
             zap_job["status"] = "running"
             zap_job["message"] = "ZAP scan running..."
+            zap_job["started_at"] = datetime.now(timezone.utc)
             last_report_zap = None
         try:
             zap_version = zap_health(zap_base_url, api_key, timeout_s=60, retries=5)
@@ -316,14 +334,17 @@ def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
                 last_report_zap = report
                 zap_job["status"] = "done"
                 zap_job["message"] = "ZAP scan completed."
+                zap_job["started_at"] = None
         except ZapError as exc:
             with zap_lock:
                 zap_job["status"] = "error"
                 zap_job["message"] = f"ZAP scan failed: {exc}"
+                zap_job["started_at"] = None
         except Exception as exc:
             with zap_lock:
                 zap_job["status"] = "error"
                 zap_job["message"] = f"ZAP scan failed: {exc}"
+                zap_job["started_at"] = None
 
     # Avoid starting multiple ZAP scans at once.
     with zap_lock:
