@@ -17,12 +17,14 @@ def _zap_request_json(zap_base_url, path, params, timeout_s=60):
         raise ZapError(f"Failed to reach ZAP at {zap_base_url}: {exc}") from exc
 
     if r.status_code != 200:
-        raise ZapError(f"ZAP returned HTTP {r.status_code}")
+        snippet = (r.text or "").strip().replace("\n", " ")[:200]
+        raise ZapError(f"ZAP returned HTTP {r.status_code}: {snippet}")
 
     try:
         return r.json()
     except ValueError as exc:
-        raise ZapError("ZAP returned invalid JSON") from exc
+        snippet = (r.text or "").strip().replace("\n", " ")[:200]
+        raise ZapError(f"ZAP returned invalid JSON: {snippet}") from exc
 
 
 def _add_apikey(params, api_key):
@@ -73,6 +75,13 @@ def zap_scan(
     active=True,
     timeout_s=600,
 ):
+    # Ensure ZAP can access the target URL before scanning.
+    _zap_request_json(
+        zap_base_url,
+        "/JSON/core/action/access/",
+        _add_apikey({"url": target_url}, api_key),
+        timeout_s=timeout_s,
+    )
     if spider:
         data = _zap_request_json(
             zap_base_url,
