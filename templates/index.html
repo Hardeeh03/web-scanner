@@ -179,6 +179,21 @@
         <h2>ZAP Status</h2>
         <p class="muted">ZAP runs asynchronously. Use the status below to track progress.</p>
         <div id="zap-status" class="status">{{ zap_message }}</div>
+        <form method="post" action="/zap-reconnect">
+          <div class="row">
+            <div>
+              <label for="zap_url_reconnect">ZAP API URL</label>
+              <input id="zap_url_reconnect" name="zap_url" type="text" value="http://localhost:8080" />
+            </div>
+            <div>
+              <label for="zap_api_key_reconnect">ZAP API Key (optional)</label>
+              <input id="zap_api_key_reconnect" name="zap_api_key" type="text" placeholder="Leave blank if disabled" />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit">Reconnect ZAP</button>
+          </div>
+        </form>
       </div>
 
       <div class="card">

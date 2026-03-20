@@ -9,12 +9,21 @@ class ZapError(Exception):
     pass
 
 
-def _zap_request_json(zap_base_url, path, params, timeout_s=180):
+def _zap_request_json(
+    zap_base_url, path, params, timeout_s=180, retries=3, backoff_s=2.0
+):
     url = urljoin(zap_base_url.rstrip("/") + "/", path.lstrip("/"))
-    try:
-        r = requests.get(url, params=params, timeout=timeout_s)
-    except requests.RequestException as exc:
-        raise ZapError(f"Failed to reach ZAP at {zap_base_url}: {exc}") from exc
+    last_exc = None
+    for attempt in range(retries + 1):
+        try:
+            r = requests.get(url, params=params, timeout=timeout_s)
+            last_exc = None
+        except requests.RequestException as exc:
+            last_exc = exc
+            if attempt < retries:
+                time.sleep(backoff_s * (attempt + 1))
+                continue
+            raise ZapError(f"Failed to reach ZAP at {zap_base_url}: {exc}") from exc
 
     if r.status_code != 200:
         snippet = (r.text or "").strip().replace("\n", " ")[:200]
@@ -33,12 +42,13 @@ def _add_apikey(params, api_key):
     return params
 
 
-def zap_health(zap_base_url, api_key="", timeout_s=180):
+def zap_health(zap_base_url, api_key="", timeout_s=180, retries=3):
     data = _zap_request_json(
         zap_base_url,
         "/JSON/core/view/version/",
         _add_apikey({}, api_key),
         timeout_s=timeout_s,
+        retries=retries,
     )
     return data.get("version", "unknown")
 

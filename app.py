@@ -271,6 +271,28 @@ def zap_status():
     }
 
 
+@app.post("/zap-reconnect")
+def zap_reconnect():
+    global last_error
+    zap_url = request.form.get("zap_url", "http://localhost:8080").strip()
+    api_key = request.form.get("zap_api_key", "").strip()
+    with zap_lock:
+        zap_job["status"] = "running"
+        zap_job["message"] = "Reconnecting to ZAP..."
+    try:
+        version = zap_health(zap_url, api_key, timeout_s=60, retries=5)
+        with zap_lock:
+            zap_job["status"] = "done"
+            zap_job["message"] = f"ZAP reachable (version {version})."
+        last_error = None
+    except ZapError as exc:
+        with zap_lock:
+            zap_job["status"] = "error"
+            zap_job["message"] = f"ZAP not reachable: {exc}"
+        last_error = None
+    return index()
+
+
 def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
     global last_report_zap
 
@@ -281,7 +303,7 @@ def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
             zap_job["message"] = "ZAP scan running..."
             last_report_zap = None
         try:
-            zap_version = zap_health(zap_base_url, api_key)
+            zap_version = zap_health(zap_base_url, api_key, timeout_s=60, retries=5)
             report = zap_scan(
                 target_url=target_url,
                 zap_base_url=zap_base_url,
