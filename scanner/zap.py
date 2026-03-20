@@ -78,8 +78,8 @@ def zap_scan(
     # Ensure ZAP can access the target URL before scanning.
     _zap_request_json(
         zap_base_url,
-        "/JSON/core/action/access/",
-        _add_apikey({"url": target_url}, api_key),
+        "/JSON/core/action/accessUrl/",
+        _add_apikey({"url": target_url, "followRedirects": True}, api_key),
         timeout_s=timeout_s,
     )
     if spider:
