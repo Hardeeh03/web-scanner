@@ -9,10 +9,10 @@ class ZapError(Exception):
     pass
 
 
-def _zap_request_json(zap_base_url, path, params):
+def _zap_request_json(zap_base_url, path, params, timeout_s=60):
     url = urljoin(zap_base_url.rstrip("/") + "/", path.lstrip("/"))
     try:
-        r = requests.get(url, params=params, timeout=15)
+        r = requests.get(url, params=params, timeout=timeout_s)
     except requests.RequestException as exc:
         raise ZapError(f"Failed to reach ZAP at {zap_base_url}: {exc}") from exc
 
@@ -31,9 +31,12 @@ def _add_apikey(params, api_key):
     return params
 
 
-def zap_health(zap_base_url, api_key=""):
+def zap_health(zap_base_url, api_key="", timeout_s=60):
     data = _zap_request_json(
-        zap_base_url, "/JSON/core/view/version/", _add_apikey({}, api_key)
+        zap_base_url,
+        "/JSON/core/view/version/",
+        _add_apikey({}, api_key),
+        timeout_s=timeout_s,
     )
     return data.get("version", "unknown")
 
@@ -45,6 +48,7 @@ def _wait_for_status(zap_base_url, api_key, view_path, scan_id, timeout_s):
             zap_base_url,
             view_path,
             _add_apikey({"scanId": scan_id}, api_key),
+            timeout_s=timeout_s,
         )
         status = data.get("status")
         try:
@@ -74,6 +78,7 @@ def zap_scan(
             zap_base_url,
             "/JSON/spider/action/scan/",
             _add_apikey({"url": target_url}, api_key),
+            timeout_s=timeout_s,
         )
         scan_id = data.get("scan")
         if not scan_id:
@@ -87,6 +92,7 @@ def zap_scan(
             zap_base_url,
             "/JSON/ascan/action/scan/",
             _add_apikey({"url": target_url, "recurse": True}, api_key),
+            timeout_s=timeout_s,
         )
         scan_id = data.get("scan")
         if not scan_id:
@@ -99,6 +105,7 @@ def zap_scan(
         zap_base_url,
         "/JSON/core/view/alerts/",
         _add_apikey({"baseurl": target_url}, api_key),
+        timeout_s=timeout_s,
     ).get("alerts", [])
 
     findings = []
@@ -121,3 +128,5 @@ def zap_scan(
         "findings": findings,
         "source": "zap",
     }
+
+
