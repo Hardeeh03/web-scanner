@@ -9,7 +9,7 @@ class ZapError(Exception):
     pass
 
 
-def _zap_request_json(zap_base_url, path, params, timeout_s=60):
+def _zap_request_json(zap_base_url, path, params, timeout_s=180):
     url = urljoin(zap_base_url.rstrip("/") + "/", path.lstrip("/"))
     try:
         r = requests.get(url, params=params, timeout=timeout_s)
@@ -33,7 +33,7 @@ def _add_apikey(params, api_key):
     return params
 
 
-def zap_health(zap_base_url, api_key="", timeout_s=60):
+def zap_health(zap_base_url, api_key="", timeout_s=180):
     data = _zap_request_json(
         zap_base_url,
         "/JSON/core/view/version/",
