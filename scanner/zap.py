@@ -88,12 +88,17 @@ def zap_scan(
     timeout_s=600,
 ):
     # Ensure ZAP can access the target URL before scanning.
-    _zap_request_json(
-        zap_base_url,
-        "/JSON/core/action/accessUrl/",
-        _add_apikey({"url": target_url, "followRedirects": "true"}, api_key),
-        timeout_s=timeout_s,
-    )
+    # Some ZAP builds may not expose accessUrl; ignore if missing.
+    try:
+        _zap_request_json(
+            zap_base_url,
+            "/JSON/core/action/accessUrl/",
+            _add_apikey({"url": target_url, "followRedirects": "true"}, api_key),
+            timeout_s=timeout_s,
+        )
+    except ZapError as exc:
+        if "does_not_exist" not in str(exc):
+            raise
     if spider:
         data = _zap_request_json(
             zap_base_url,
