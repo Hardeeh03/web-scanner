@@ -347,9 +347,9 @@
       </div>
       {% endif %}
 
-      {% if report_zap %}
       <div class="card results">
         <h2>ZAP Results</h2>
+        {% if zap_has_report %}
         <p>Target: {{ report_zap.target }}</p>
         <p>UTC Time: {{ report_zap.timestamp_utc }}</p>
         <p>ZAP Version: {{ report_zap.zap_version }}</p>
@@ -358,6 +358,11 @@
           <a href="/export/zap?download=1">Download JSON</a>
         </p>
 
+        {% if report_zap.findings|length == 0 %}
+        <p class="muted">
+          No ZAP findings match the current filter. Try setting the filter to "All severities".
+        </p>
+        {% else %}
         {% for item in report_zap.findings %}
         <div class="result-item">
           {{ item }}
@@ -366,8 +371,11 @@
           {% endif %}
         </div>
         {% endfor %}
+        {% endif %}
+        {% else %}
+        <p class="muted">No ZAP report loaded yet. Run a ZAP or Professional scan.</p>
+        {% endif %}
       </div>
-      {% endif %}
 
       {% if report_burp %}
       <div class="card results">

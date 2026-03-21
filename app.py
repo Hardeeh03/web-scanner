@@ -134,15 +134,17 @@ def _wrap_text(text, max_len):
 @app.get("/")
 def index():
     severity = request.args.get("severity", "all")
+    report_zap_filtered = _filter_report(last_report_zap, severity)
     return render_template(
         "index.html",
         report_basic=_filter_report(last_report_basic, severity),
-        report_zap=_filter_report(last_report_zap, severity),
+        report_zap=report_zap_filtered,
         report_burp=_filter_report(last_report_burp, severity),
         error=last_error,
         severity=severity,
         zap_status=zap_job["status"],
         zap_message=zap_job["message"],
+        zap_has_report=last_report_zap is not None,
     )
 
 
