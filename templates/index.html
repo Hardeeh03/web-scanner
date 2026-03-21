@@ -112,6 +112,12 @@
         font-size: 14px;
         white-space: pre-wrap;
       }
+      .result-summary {
+        margin: 6px 0 0 0;
+        font-family: "Georgia", "Times New Roman", serif;
+        font-size: 14px;
+        color: var(--muted);
+      }
       .muted {
         color: var(--muted);
       }
@@ -331,7 +337,12 @@
         </p>
 
         {% for item in report_basic.findings %}
-        <div class="result-item">{{ item }}</div>
+        <div class="result-item">
+          {{ item }}
+          {% if item.summary %}
+          <div class="result-summary">{{ item.summary }}</div>
+          {% endif %}
+        </div>
         {% endfor %}
       </div>
       {% endif %}
@@ -348,7 +359,12 @@
         </p>
 
         {% for item in report_zap.findings %}
-        <div class="result-item">{{ item }}</div>
+        <div class="result-item">
+          {{ item }}
+          {% if item.summary %}
+          <div class="result-summary">{{ item.summary }}</div>
+          {% endif %}
+        </div>
         {% endfor %}
       </div>
       {% endif %}
@@ -363,7 +379,12 @@
         </p>
 
         {% for item in report_burp.findings %}
-        <div class="result-item">{{ item }}</div>
+        <div class="result-item">
+          {{ item }}
+          {% if item.summary %}
+          <div class="result-summary">{{ item.summary }}</div>
+          {% endif %}
+        </div>
         {% endfor %}
       </div>
       {% endif %}

@@ -17,7 +17,12 @@ def scan_misconfig(base_url):
         for h in COMMON_HEADERS:
             if h not in r.headers:
                 findings.append(
-                    {"type": "Missing Security Header", "header": h, "url": base_url}
+                    {
+                        "type": "Missing Security Header",
+                        "header": h,
+                        "url": base_url,
+                        "summary": f"The site is missing the {h} security header, which helps protect users.",
+                    }
                 )
     except Exception:
         pass

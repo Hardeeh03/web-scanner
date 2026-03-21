@@ -35,6 +35,7 @@ def parse_burp_xml(xml_bytes):
                 "severity": _text(issue, "severity") or "Unknown",
                 "confidence": _text(issue, "confidence") or "Unknown",
                 "url": url,
+                "summary": "Burp reported a security issue. Review the details and fix the underlying risk.",
             }
         )
 

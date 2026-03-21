@@ -28,6 +28,7 @@ def scan_xss(pages):
                             "type": "Reflected XSS (Heuristic)",
                             "url": test_url,
                             "param": param,
+                            "summary": "The page reflected input back into the response, which can allow script injection (XSS).",
                         }
                     )
             except Exception:

@@ -12,7 +12,14 @@ def scan_ports(base_url):
         try:
             sock = socket.create_connection((host, port), timeout=1.5)
             sock.close()
-            findings.append({"type": "Open Port", "port": port, "host": host})
+            findings.append(
+                {
+                    "type": "Open Port",
+                    "port": port,
+                    "host": host,
+                    "summary": f"Port {port} is open on {host}, which could expose a service.",
+                }
+            )
         except Exception:
             continue
 

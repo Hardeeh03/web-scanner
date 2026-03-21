@@ -131,14 +131,18 @@ def zap_scan(
 
     findings = []
     for alert in alerts:
+        name = alert.get("alert", "Unknown")
+        risk = alert.get("risk", "Unknown")
+        summary = _summarize_zap_alert(name, risk)
         findings.append(
             {
                 "type": "ZAP Alert",
-                "name": alert.get("alert", "Unknown"),
-                "risk": alert.get("risk", "Unknown"),
+                "name": name,
+                "risk": risk,
                 "confidence": alert.get("confidence", "Unknown"),
                 "url": alert.get("url", ""),
                 "param": alert.get("param", ""),
+                "summary": summary,
             }
         )
 
@@ -149,5 +153,20 @@ def zap_scan(
         "findings": findings,
         "source": "zap",
     }
+
+
+def _summarize_zap_alert(name, risk):
+    lower = name.lower()
+    if "csp" in lower or "content security policy" in lower:
+        return "The site does not set a Content Security Policy header, which helps prevent XSS."
+    if "anti-clickjacking" in lower or "x-frame-options" in lower:
+        return "The site does not block being framed, which can enable clickjacking."
+    if "x-content-type-options" in lower:
+        return "The site does not prevent the browser from guessing content types, which can be risky."
+    if "server leaks version" in lower:
+        return "The server reveals software version details, which can help attackers target known flaws."
+    if "http only site" in lower:
+        return "The site is not using HTTPS, so traffic can be intercepted."
+    return f"A {risk.lower()}-risk security issue was detected. Review and remediate the finding."
 
 

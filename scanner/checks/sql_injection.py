@@ -37,6 +37,7 @@ def scan_sql(pages):
                             "type": "SQL Injection (Heuristic)",
                             "url": test_url,
                             "param": param,
+                            "summary": "The page showed a database error when we tested input, which can indicate SQL injection risk.",
                         }
                     )
             except Exception:
