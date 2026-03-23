@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 from threading import Lock, Thread
 from urllib.parse import urlparse
 
@@ -16,6 +17,9 @@ from scanner.zap import ZapError, zap_health, zap_scan
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+
+REPORT_DIR = Path(__file__).resolve().parent / "reports"
+REPORT_DIR.mkdir(exist_ok=True)
 
 last_report_basic = None
 last_report_zap = None
@@ -82,6 +86,29 @@ def _combine_reports(*reports):
     return combined
 
 
+def _report_path(kind):
+    return REPORT_DIR / f"{kind}.json"
+
+
+def _save_report(kind, report):
+    if report is None:
+        return
+    try:
+        _report_path(kind).write_text(json.dumps(report, ensure_ascii=True), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _load_report(kind):
+    path = _report_path(kind)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
 def _render_combined_html(report):
     lines = []
     lines.append("<!doctype html><html><head><meta charset='utf-8'>")
@@ -134,6 +161,13 @@ def _wrap_text(text, max_len):
 @app.get("/")
 def index():
     severity = request.args.get("severity", "all")
+    global last_report_basic, last_report_zap, last_report_burp
+    if last_report_basic is None:
+        last_report_basic = _load_report("basic")
+    if last_report_zap is None:
+        last_report_zap = _load_report("zap")
+    if last_report_burp is None:
+        last_report_burp = _load_report("burp")
     report_zap_filtered = _filter_report(last_report_zap, severity)
     return render_template(
         "index.html",
@@ -170,6 +204,7 @@ def scan():
         last_report_basic = run_scan(
             base_url=base_url, max_pages=max_pages_int, include_ports=include_ports
         )
+        _save_report("basic", last_report_basic)
         last_error = None
     except Exception as exc:
         last_error = f"Scan failed: {exc}"
@@ -218,6 +253,7 @@ def burp_import_route():
     try:
         xml_bytes = file.read()
         last_report_burp = parse_burp_xml(xml_bytes)
+        _save_report("burp", last_report_burp)
         last_error = None
     except BurpImportError as exc:
         last_error = f"Burp import failed: {exc}"
@@ -251,6 +287,7 @@ def pro_scan_route():
         last_report_basic = run_scan(
             base_url=base_url, max_pages=max_pages_int, include_ports=include_ports
         )
+        _save_report("basic", last_report_basic)
         _start_zap_job(
             target_url=base_url,
             zap_base_url=zap_url,
@@ -334,6 +371,7 @@ def _start_zap_job(target_url, zap_base_url, api_key, spider, active):
             report["zap_version"] = zap_version
             with zap_lock:
                 last_report_zap = report
+                _save_report("zap", last_report_zap)
                 zap_job["status"] = "done"
                 zap_job["message"] = "ZAP scan completed."
                 zap_job["started_at"] = None
@@ -406,4 +444,4 @@ def export_combined_pdf():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False, use_reloader=False)
