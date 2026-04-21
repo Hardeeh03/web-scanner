@@ -1,0 +1,29 @@
+﻿{
+  "owner": "Hardeeh03",
+  "target_repos": [
+    "hardee-portfolio",
+    "expense-management",
+    "cyberlock-quest",
+    "wireshark-network-security-analysis",
+    "web-scanner"
+  ],
+  "skip_repos": [
+    "for-you"
+  ],
+  "preferred_files": [
+    "daily-log.md",
+    "maintenance-log.txt",
+    "notes.md",
+    "progress.md",
+    "README.md"
+  ],
+  "commit_messages": [
+    "docs: update project notes",
+    "chore: daily maintenance update",
+    "docs: refresh README notes",
+    "chore: update activity log",
+    "docs: add progress entry"
+  ],
+  "bot_name": "repo-maintenance-bot",
+  "bot_email": "repo-maintenance-bot@users.noreply.github.com"
+}

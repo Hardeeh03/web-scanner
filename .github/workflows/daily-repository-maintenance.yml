@@ -1,0 +1,37 @@
+﻿name: Daily Repository Maintenance
+
+on:
+  schedule:
+    # Runs daily at 07:20 UTC.
+    - cron: "20 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-repository-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain-one-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout automation repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run maintenance updater
+        env:
+          # For cross-repository pushes, use MAINTENANCE_PAT secret.
+          # If only this repository is targeted, github.token is enough.
+          MAINTENANCE_TOKEN: ${{ secrets.MAINTENANCE_PAT != '' && secrets.MAINTENANCE_PAT || github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          MAINTENANCE_CONFIG: automation/maintenance-config.json
+        run: |
+          python scripts/daily_maintenance.py
