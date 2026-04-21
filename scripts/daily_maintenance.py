@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Iterable
@@ -124,7 +125,9 @@ def stage_commit_push(repo_dir: Path, message: str, bot_name: str, bot_email: st
 
 
 def clone_repo(owner: str, repo: str, token: str, destination: Path) -> None:
-    url = f"https://x-access-token:{token}@github.com/{owner}/{repo}.git"
+    encoded = urllib.parse.quote(token, safe="")
+    # Username can be any non-empty value for PAT over HTTPS.
+    url = f"https://github-actions:{encoded}@github.com/{owner}/{repo}.git"
     run(["git", "clone", "--depth", "1", url, str(destination)])
 
 
