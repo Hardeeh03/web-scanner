@@ -197,6 +197,7 @@ def main() -> int:
 
     print(f"Run date (UTC): {run_date.isoformat()}")
     print(f"Candidate order: {ordered_repos}")
+    auth_blocked = 0
 
     for repo in ordered_repos:
         owner_repo = f"{owner}/{repo}"
@@ -226,8 +227,17 @@ def main() -> int:
             print(f"Nothing staged for {owner_repo}; trying next repository.")
         except subprocess.CalledProcessError as exc:
             print(f"Failed for {owner_repo}: {exc.cmd}\n{exc.stderr}", file=sys.stderr)
+            if "403" in (exc.stderr or "") or "denied" in (exc.stderr or "").lower():
+                auth_blocked += 1
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+    if auth_blocked >= len(ordered_repos):
+        print(
+            "No commit created because token lacked push access for all candidate repositories.",
+            file=sys.stderr,
+        )
+        return 1
 
     print("Completed run without creating a commit.")
     return 0
