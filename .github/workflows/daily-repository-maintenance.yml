@@ -28,9 +28,9 @@ jobs:
 
       - name: Run maintenance updater
         env:
-          # For cross-repository pushes, use MAINTENANCE_PAT secret.
-          # If only this repository is targeted, github.token is enough.
-          MAINTENANCE_TOKEN: ${{ secrets.MAINTENANCE_PAT != '' && secrets.MAINTENANCE_PAT || github.token }}
+          # For cross-repository pushes, define MAINTENANCE_PAT in Actions secrets.
+          # If omitted, script falls back to GITHUB_TOKEN (same-repo automation only).
+          MAINTENANCE_TOKEN: ${{ secrets.MAINTENANCE_PAT }}
           GITHUB_TOKEN: ${{ github.token }}
           MAINTENANCE_CONFIG: automation/maintenance-config.json
         run: |

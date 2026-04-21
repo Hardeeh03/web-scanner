@@ -42,14 +42,17 @@ If you only target the repository that hosts this workflow, the built-in token i
 If the workflow updates other repositories, add a Personal Access Token secret:
 
 1. Create a PAT with repo write access for target repositories.
-2. In the automation repository, open `Settings -> Secrets and variables -> Actions`.
-3. Create secret `MAINTENANCE_PAT`.
-4. Keep `permissions: contents: write` in the workflow.
+2. If using a fine-grained token, grant it to each target repository and enable `Contents: Read and write`.
+3. In the automation repository, open `Settings -> Secrets and variables -> Actions`.
+4. Create secret `MAINTENANCE_PAT`.
+5. Keep `permissions: contents: write` in the workflow.
 
 The workflow automatically uses:
 
 - `MAINTENANCE_PAT` when present.
 - `github.token` as fallback.
+
+The script also performs a push-permission preflight check through the GitHub API and skips repositories the token cannot write to.
 
 ## Safety Rules
 

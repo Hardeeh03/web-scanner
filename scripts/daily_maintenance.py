@@ -19,6 +19,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Iterable
 
@@ -126,6 +128,31 @@ def clone_repo(owner: str, repo: str, token: str, destination: Path) -> None:
     run(["git", "clone", "--depth", "1", url, str(destination)])
 
 
+def has_push_permission(owner: str, repo: str, token: str) -> tuple[bool, str]:
+    url = f"https://api.github.com/repos/{owner}/{repo}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "daily-maintenance-bot",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        return False, f"GitHub API error {exc.code}"
+    except Exception as exc:  # pragma: no cover - defensive logging path
+        return False, f"GitHub API error: {exc}"
+
+    permissions = payload.get("permissions", {})
+    can_push = bool(permissions.get("push"))
+    reason = "push allowed" if can_push else "no push permission"
+    return can_push, reason
+
+
 def main() -> int:
     workspace = Path(os.environ.get("GITHUB_WORKSPACE", ".")).resolve()
     config_path = Path(os.environ.get("MAINTENANCE_CONFIG", workspace / "automation" / "maintenance-config.json"))
@@ -151,6 +178,16 @@ def main() -> int:
         print("No candidate repositories after applying skip list.")
         return 0
 
+    current_repo = os.environ.get("GITHUB_REPOSITORY", "")
+    using_default_token = bool(os.environ.get("GITHUB_TOKEN")) and not bool(os.environ.get("MAINTENANCE_TOKEN"))
+    if using_default_token:
+        cross_repo_targets = [r for r in candidates if f"{owner}/{r}" != current_repo]
+        if cross_repo_targets:
+            print(
+                "Warning: using default GITHUB_TOKEN with cross-repo targets. "
+                "Set MAINTENANCE_PAT with push access for all target repositories."
+            )
+
     ordered_repos = choose_repo(candidates, run_date)
     msg_idx = (run_date - dt.date(1970, 1, 1)).days % len(commit_messages)
     commit_message = commit_messages[msg_idx]
@@ -161,6 +198,12 @@ def main() -> int:
     for repo in ordered_repos:
         owner_repo = f"{owner}/{repo}"
         print(f"Attempting repository: {owner_repo}")
+
+        can_push, reason = has_push_permission(owner, repo, token)
+        if not can_push:
+            print(f"Skipping {owner_repo}: token cannot push ({reason}).")
+            continue
+
         tmp = Path(tempfile.mkdtemp(prefix=f"daily-maintenance-{repo}-"))
 
         try:
