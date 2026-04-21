@@ -37,7 +37,8 @@ def run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subproce
 
 
 def load_config(path: Path) -> dict:
-    with path.open("r", encoding="utf-8") as f:
+    # Accept UTF-8 files with or without BOM to avoid editor/OS variance.
+    with path.open("r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 
