@@ -24,8 +24,8 @@ It’s intended as a practical UI for organizing findings—not a full replaceme
 ## Install & Run
 
 ```powershell
-python -m pip install -r C:\Users\Hardee\OneDrive\Documents\Playground\requirements.txt
-python C:\Users\Hardee\OneDrive\Documents\Playground\app.py
+python -m pip install -r requirements.txt
+python app.py
 ```
 
 Open `http://127.0.0.1:5000`.
