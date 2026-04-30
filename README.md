@@ -87,9 +87,3 @@ Use the dropdown at the top of the UI to filter results by severity.
 - This project is for authorized testing only.
 - The basic scanner is heuristic and should be used as a supplement to professional tools like ZAP and Burp.
 
-## Daily Maintenance Log
-
-- 2026-04-21 15:12:18 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-04-25 08:13:05 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-04-26 08:39:41 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-04-30 09:30:51 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
