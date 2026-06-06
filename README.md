@@ -87,19 +87,3 @@ Use the dropdown at the top of the UI to filter results by severity.
 - This project is for authorized testing only.
 - The basic scanner is heuristic and should be used as a supplement to professional tools like ZAP and Burp.
 
-## Daily Maintenance Log
-
-- 2026-05-01 09:14:16 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-05 09:24:04 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-06 09:37:59 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-10 09:09:33 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-11 10:45:00 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-15 10:00:17 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-16 09:05:59 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-20 10:29:58 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-21 10:50:30 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-25 11:17:35 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-30 09:26:05 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-05-31 09:58:03 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-06-04 10:45:17 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
-- 2026-06-05 10:55:47 UTC: automated maintenance check-in for `Hardeeh03/web-scanner`.
